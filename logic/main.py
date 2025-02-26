@@ -1,3 +1,5 @@
+import pathlib
+
 import psycopg
 
 
@@ -18,17 +20,31 @@ if __name__ == '__main__':
             SELECT EXISTS(
                 SELECT *
                 FROM information_schema.tables
-                WHERE table_name='users'
+                WHERE table_name='global_map'
             )
         """).fetchone()[0]
 
         if not already_exists:
             conn.execute("""
-                CREATE TABLE users (
-                    user_id SERIAL PRIMARY KEY,
-                    name varchar(255)
+                CREATE TABLE global_map (
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    tile VARCHAR(8)
                 );
             """)
 
-        conn.execute("INSERT INTO users (name) VALUES (%s)", ("Demo Demoviev", ))
-        print(conn.execute("SELECT user_id, name FROM users").fetchall())
+            TILE_TYPES = {
+                ".": "dead",
+                "-": "plain",
+                "f": "forest",
+                "^": "mountain",
+            }
+
+            for y, line in enumerate(pathlib.Path("map.txt").read_text().splitlines()):
+                for x, character in enumerate(line):
+                    conn.execute(
+                        "INSERT INTO global_map (x, y, tile) VALUES (%s, %s, %s)",
+                        (x, y, TILE_TYPES[character])
+                    )
+
+        print(conn.execute("SELECT tile FROM global_map WHERE x = 2 AND y = 1").fetchone())
