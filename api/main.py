@@ -45,4 +45,10 @@ def hello_world():
 async def global_map(db: AsyncConnection = Depends(get_db_connection)):
     async with db.cursor() as cursor:
         await cursor.execute("""SELECT * FROM global_map""")
-        return await cursor.fetchall()
+        return [
+            {
+                "x": x,
+                "y": y,
+                "tile": tile,
+            } for x, y, tile in await cursor.fetchall()
+        ]
