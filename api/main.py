@@ -1,8 +1,27 @@
-from fastapi import FastAPI
-import psycopg
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Depends
+from psycopg import AsyncConnection
+from psycopg_pool import AsyncConnectionPool
 from starlette.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db_pool = AsyncConnectionPool(
+        conninfo="postgresql://postgres:postgres@db:5432/testdb",
+        min_size=1,
+        max_size=10,
+    )
+
+    await db_pool.open()
+    app.state.db_pool = db_pool
+    try:
+        yield
+    finally:
+        await db_pool.close()
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -11,22 +30,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-db = psycopg.Connection.connect(
-    dbname="testdb",
-    user="postgres",
-    password="postgres",
-    host="db",
-    port=5432,
-)
+async def get_db_connection():
+    async with app.state.db_pool.connection() as conn:
+        yield conn
 
 
+# TODO! move routes
 @app.get("/")
 def hello_world():
     return {"Hello": "World1"}
 
-# TODO! async
 # TODO! return type
 @app.get("/global_map")
-def global_map():
-    with db.cursor() as cursor:
-        return cursor.execute("""SELECT * FROM global_map""").fetchall()
+async def global_map(db: AsyncConnection = Depends(get_db_connection)):
+    async with db.cursor() as cursor:
+        await cursor.execute("""SELECT * FROM global_map""")
+        return await cursor.fetchall()
