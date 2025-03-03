@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
+from typing import Literal
 
 from fastapi import FastAPI, Depends
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
+from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
 
@@ -37,18 +39,19 @@ async def get_db_connection():
 
 # TODO! move routes
 @app.get("/")
-def hello_world():
-    return {"Hello": "World1"}
+def hello_world() -> Literal["Hello, world!"]:
+    return "Hello, world!"
 
-# TODO! return type
+class WorldTile(BaseModel):
+    x: int
+    y: int
+    tile: Literal["dead", "plain", "forest", "mountain"]
+
 @app.get("/global_map")
-async def global_map(db: AsyncConnection = Depends(get_db_connection)):
+async def global_map(db: AsyncConnection = Depends(get_db_connection)) -> list[WorldTile]:
     async with db.cursor() as cursor:
         await cursor.execute("""SELECT * FROM global_map""")
         return [
-            {
-                "x": x,
-                "y": y,
-                "tile": tile,
-            } for x, y, tile in await cursor.fetchall()
+            WorldTile(x=x, y=y, tile=tile)
+            for x, y, tile in await cursor.fetchall()
         ]
