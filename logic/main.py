@@ -8,7 +8,7 @@ if __name__ == '__main__':
         dbname="testdb",
         user="postgres",
         password="postgres",
-        host="localhost",
+        host="db",
         port=5432,
     ) as conn:
         print("Connected")
@@ -46,5 +46,7 @@ if __name__ == '__main__':
                         "INSERT INTO global_map (x, y, tile) VALUES (%s, %s, %s)",
                         (x, y, TILE_TYPES[character])
                     )
+
+            print("Initialized DB")
 
         print(conn.execute("SELECT tile FROM global_map WHERE x = 2 AND y = 1").fetchone())

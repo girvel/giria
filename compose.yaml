@@ -1,11 +1,15 @@
 services:
-  # logic:
-  #   build: logic
+  logic:
+    build: logic
+    depends_on:
+    - db
 
   api:
     build: api
     ports:
     - 8080:80
+    depends_on:
+    - db
 
   db:
     image: postgres
@@ -14,3 +18,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: testdb
+    volumes:
+    - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
