@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from psycopg import AsyncConnection
 from pydantic import BaseModel
 
+import security
 from db import get_db_connection
 
 router = APIRouter()
@@ -50,9 +51,9 @@ class LoginPair(BaseModel):
 async def login(login_pair: LoginPair, db: AsyncConnection = Depends(get_db_connection)) -> bool:
     async with db.cursor() as cursor:
         await cursor.execute("""
-            SELECT EXISTS(
-                SELECT * FROM players
-                WHERE login = %s AND password = %s
-            )
-        """, (login_pair.login, login_pair.password))
-        return (await cursor.fetchone())[0]
+            SELECT password FROM players
+            WHERE login = %s
+        """, (login_pair.login, ))
+
+        password_hash, = await cursor.fetchone()
+        return security.verify_password(login_pair.password, password_hash)

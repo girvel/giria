@@ -29,12 +29,12 @@ if __name__ == '__main__':
                 CREATE TABLE players (
                     player_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                     login VARCHAR(20) NOT NULL,
-                    password VARCHAR(128) NOT NULL,
+                    password BYTEA NOT NULL,
                     color CHAR(6) NOT NULL
                 );
                 
                 INSERT INTO players (login, color, password)
-                VALUES ('remnants', 'dddddd', 'password');
+                VALUES ('remnants', 'dddddd', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi');
                 
                 CREATE TABLE cities (
                     city_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
