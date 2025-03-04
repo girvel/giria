@@ -20,7 +20,7 @@ if __name__ == '__main__':
             SELECT EXISTS(
                 SELECT *
                 FROM information_schema.tables
-                WHERE table_name='global_map'
+                WHERE table_name='world_map'
             )
         """).fetchone()[0]
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
                 INSERT INTO cities (population, player_id)
                 VALUES (1000, 1);
                 
-                CREATE TABLE global_map (
+                CREATE TABLE world_map (
                     x INTEGER NOT NULL,
                     y INTEGER NOT NULL,
                     tile VARCHAR(8),
@@ -62,12 +62,12 @@ if __name__ == '__main__':
             for y, line in enumerate(pathlib.Path("map.txt").read_text().splitlines()):
                 for x, character in enumerate(line):
                     conn.execute(
-                        "INSERT INTO global_map (x, y, tile) VALUES (%s, %s, %s)",
+                        "INSERT INTO world_map (x, y, tile) VALUES (%s, %s, %s)",
                         (x, y, TILE_TYPES[character])
                     )
 
             conn.execute("""
-                UPDATE global_map
+                UPDATE world_map
                 SET city_id = 1
                 WHERE x = 1 AND y = 1;
             """)
@@ -75,4 +75,4 @@ if __name__ == '__main__':
 
             print("Initialized DB")
 
-        print(conn.execute("SELECT tile FROM global_map WHERE x = 2 AND y = 1").fetchone())
+        print(conn.execute("SELECT tile FROM world_map WHERE x = 2 AND y = 1").fetchone())

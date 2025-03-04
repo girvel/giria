@@ -24,13 +24,13 @@ class WorldTile(BaseModel):
     tile: Literal["dead", "plain", "forest", "mountain"]
     city: City | None
 
-@router.get("/global_map")
-async def global_map(db: AsyncConnection = Depends(get_db_connection)) -> list[WorldTile]:
+@router.get("/world_map")
+async def world_map(db: AsyncConnection = Depends(get_db_connection)) -> list[WorldTile]:
     async with db.cursor() as cursor:
         await cursor.execute("""
-            SELECT x, y, tile, global_map.city_id, login, population
-            FROM global_map
-            LEFT JOIN cities ON global_map.city_id = cities.city_id
+            SELECT x, y, tile, world_map.city_id, login, population
+            FROM world_map
+            LEFT JOIN cities ON world_map.city_id = cities.city_id
             LEFT JOIN players ON cities.player_id = players.player_id
         """)
 
