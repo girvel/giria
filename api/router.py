@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg import AsyncConnection
 from pydantic import BaseModel
 
@@ -47,13 +47,25 @@ class LoginPair(BaseModel):
     login: str
     password: str
 
+class LoginResponse(BaseModel):
+    token: str
+
 @router.post("/login")
-async def login(login_pair: LoginPair, db: AsyncConnection = Depends(get_db_connection)) -> bool:
-    async with db.cursor() as cursor:
+async def login(login_pair: LoginPair, db: AsyncConnection = Depends(get_db_connection)) -> LoginResponse:
+    async with db.cursor() as cursor:  # TODO! cursor as a dependency
         await cursor.execute("""
             SELECT password FROM players
             WHERE login = %s
         """, (login_pair.login, ))
 
         password_hash, = await cursor.fetchone()
-        return security.verify_password(login_pair.password, password_hash)
+        if not security.verify_password(login_pair.password, password_hash):
+            raise HTTPException(  # TODO! return instead of panic
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return LoginResponse(
+            token=security.create_access_token(login_pair.model_dump()),
+        )
