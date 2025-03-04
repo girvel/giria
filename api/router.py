@@ -41,3 +41,11 @@ async def world_map(db: AsyncConnection = Depends(get_db_connection)) -> list[Wo
             )
             for x, y, tile, city_name, login, population in await cursor.fetchall()
         ]
+
+class LoginPair(BaseModel):
+    login: str
+    password: str
+
+@router.post("/login")
+async def login(login_pair: LoginPair) -> bool:
+    return login_pair.login == "girvel" and login_pair.password == "girvel"
