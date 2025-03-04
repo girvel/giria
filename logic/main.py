@@ -5,7 +5,7 @@ import psycopg
 
 if __name__ == '__main__':
     with psycopg.connect(
-        dbname="testdb",
+        dbname="giria",
         user="postgres",
         password="postgres",
         host="db",

@@ -7,7 +7,7 @@ from psycopg_pool import AsyncConnectionPool
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db_pool = AsyncConnectionPool(
-        conninfo="postgresql://postgres:postgres@db:5432/testdb",
+        conninfo="postgresql://postgres:postgres@db:5432/giria",
         min_size=1,
         max_size=10,
         open=False,
