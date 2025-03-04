@@ -47,5 +47,12 @@ class LoginPair(BaseModel):
     password: str
 
 @router.post("/login")
-async def login(login_pair: LoginPair) -> bool:
-    return login_pair.login == "girvel" and login_pair.password == "girvel"
+async def login(login_pair: LoginPair, db: AsyncConnection = Depends(get_db_connection)) -> bool:
+    async with db.cursor() as cursor:
+        await cursor.execute("""
+            SELECT EXISTS(
+                SELECT * FROM players
+                WHERE login = %s AND password = %s
+            )
+        """, (login_pair.login, login_pair.password))
+        return (await cursor.fetchone())[0]
