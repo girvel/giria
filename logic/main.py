@@ -27,21 +27,23 @@ if __name__ == '__main__':
         if not already_exists:
             conn.execute("""
                 CREATE TABLE players (
-                    player_id SERIAL PRIMARY KEY,
-                    login TEXT NOT NULL
+                    player_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                    login VARCHAR(20) NOT NULL,
+                    color CHAR(6) NOT NULL
                 );
                 
-                INSERT INTO players (login)
-                VALUES ('girvel');
+                INSERT INTO players (login, color)
+                VALUES ('remnants', 'dddddd');
                 
                 CREATE TABLE cities (
-                    city_id SERIAL PRIMARY KEY,
+                    city_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                    name VARCHAR(20),
                     population INTEGER NOT NULL,
                     player_id INTEGER REFERENCES players
                 );
                 
-                INSERT INTO cities (population, player_id)
-                VALUES (1000, 1);
+                INSERT INTO cities (name, population, player_id)
+                VALUES ('Aldberg', 500, 1);
                 
                 CREATE TABLE world_map (
                     x INTEGER NOT NULL,

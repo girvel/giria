@@ -14,7 +14,7 @@ def hello_world() -> Literal["Hello, world!"]:
     return "Hello, world!"
 
 class City(BaseModel):
-    city_id: int
+    city_name: str
     player_login: str
     population: int
 
@@ -28,7 +28,7 @@ class WorldTile(BaseModel):
 async def world_map(db: AsyncConnection = Depends(get_db_connection)) -> list[WorldTile]:
     async with db.cursor() as cursor:
         await cursor.execute("""
-            SELECT x, y, tile, world_map.city_id, login, population
+            SELECT x, y, tile, name, login, population
             FROM world_map
             LEFT JOIN cities ON world_map.city_id = cities.city_id
             LEFT JOIN players ON cities.player_id = players.player_id
@@ -37,7 +37,7 @@ async def world_map(db: AsyncConnection = Depends(get_db_connection)) -> list[Wo
         return [
             WorldTile(
                 x=x, y=y, tile=tile,
-                city=city_id and City(city_id=city_id, player_login=login, population=population)
+                city=city_name and City(city_name=city_name, player_login=login, population=population)
             )
-            for x, y, tile, city_id, login, population in await cursor.fetchall()
+            for x, y, tile, city_name, login, population in await cursor.fetchall()
         ]
