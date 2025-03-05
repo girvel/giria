@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from psycopg import AsyncCursor
 from pydantic import BaseModel
 
-import security
-from db import cursor
+from . import security
+from .dependencies.db import cursor
+from .dependencies.auth import login
 
 router = APIRouter()
 
@@ -51,7 +52,7 @@ class LoginResponse(BaseModel):
     token_type: Literal["bearer"]
 
 @router.post("/login")
-async def login(login_pair: LoginPair, db: AsyncCursor = Depends(cursor)) -> LoginResponse:
+async def login_(login_pair: LoginPair, db: AsyncCursor = Depends(cursor)) -> LoginResponse:
     await db.execute("""
         SELECT password FROM players
         WHERE login = %s
@@ -68,3 +69,51 @@ async def login(login_pair: LoginPair, db: AsyncCursor = Depends(cursor)) -> Log
         token=security.create_access_token(login_pair.model_dump()),
         token_type="bearer",
     )
+
+class SettleBody(BaseModel):
+    x: int
+    y: int
+    city_name: str
+
+@router.post("/settle")
+async def settle(body: SettleBody, db: AsyncCursor = Depends(cursor), user: str = Depends(login)):
+    await db.execute("""
+        SELECT city_id FROM world_map
+        WHERE x = %s AND y = %s;
+    """, (body.x, body.y))
+
+    if (await db.fetchone())[0] is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Position occupied",
+        )
+
+    await db.execute("""
+        SELECT EXISTS(
+            SELECT * FROM cities
+            LEFT JOIN players ON cities.player_id = players.player_id
+            WHERE login = %s
+        );
+    """, (user, ))
+
+    if (await db.fetchone())[0]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Player already settled",
+        )
+
+    await db.execute("""
+        INSERT INTO cities (name, population, player_id)
+        SELECT %s AS name, 100 AS population, player_id
+        FROM players
+        WHERE login = %s
+        RETURNING city_id
+    """, (body.city_name, user, ))
+
+    city_id, = await db.fetchone()  # TODO! try joining queries
+
+    await db.execute("""
+        UPDATE world_map
+        SET city_id = %s
+        WHERE x = %s AND y = %s
+    """, (city_id, body.x, body.y))

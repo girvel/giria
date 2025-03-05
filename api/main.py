@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-import router
-import db
+from . import router
+from .dependencies import db
 
 app = FastAPI(lifespan=db.lifespan)
 app.add_middleware(

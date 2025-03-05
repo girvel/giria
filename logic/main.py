@@ -34,7 +34,9 @@ if __name__ == '__main__':
                 );
                 
                 INSERT INTO players (login, color, password)
-                VALUES ('remnants', 'dddddd', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi');
+                VALUES
+                ('remnants', 'dddddd', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi'),
+                ('girvel', 'dd134b', '$2b$12$D38R.HynTNpRGcsq1lhae.MyOSgVM7tUyfhfLBzbgXrWUQ5k.iRxi');
                 
                 CREATE TABLE cities (
                     city_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
