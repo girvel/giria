@@ -54,8 +54,8 @@ async def login_(response: Response, login_pair: LoginPair, db: AsyncCursor = De
         WHERE login = %s
     """, (login_pair.login, ))
 
-    password_hash, = await db.fetchone()
-    if not security.verify_password(login_pair.password, password_hash):
+    entry = await db.fetchone()
+    if not entry or not security.verify_password(login_pair.password, entry[0]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid credentials",
