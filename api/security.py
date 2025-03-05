@@ -13,10 +13,11 @@ def verify_password(password: str, password_hash: bytes) -> bool:
 
 SECRET_KEY = "no-secret"
 ALGORITHM = "HS256"
+TOKEN_LIFETIME_SEC = 3600 * 24
 
 def create_access_token(data: dict) -> str:
     return jwt.encode(
-        data | {"exp": datetime.utcnow() + timedelta(days=1)},
+        data | {"exp": datetime.utcnow() + timedelta(seconds=TOKEN_LIFETIME_SEC)},
         SECRET_KEY,  # TODO! secret key
         algorithm=ALGORITHM,
     )

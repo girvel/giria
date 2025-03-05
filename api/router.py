@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from psycopg import AsyncCursor
 from pydantic import BaseModel
 
@@ -47,12 +47,8 @@ class LoginPair(BaseModel):
     login: str
     password: str
 
-class LoginResponse(BaseModel):
-    token: str
-    token_type: Literal["bearer"]
-
 @router.post("/login")
-async def login_(login_pair: LoginPair, db: AsyncCursor = Depends(cursor)) -> LoginResponse:
+async def login_(response: Response, login_pair: LoginPair, db: AsyncCursor = Depends(cursor)):
     await db.execute("""
         SELECT password FROM players
         WHERE login = %s
@@ -65,9 +61,13 @@ async def login_(login_pair: LoginPair, db: AsyncCursor = Depends(cursor)) -> Lo
             detail="Invalid credentials",
         )
 
-    return LoginResponse(
-        token=security.create_access_token(login_pair.model_dump()),
-        token_type="bearer",
+    response.set_cookie(
+        key="jwt",
+        value=security.create_access_token({"login": login_pair.login}),
+        httponly=True,
+        # secure=True,  # TODO! https
+        samesite="lax",
+        max_age=security.TOKEN_LIFETIME_SEC
     )
 
 class SettleBody(BaseModel):
