@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     finally:
         await db_pool.close()
 
-async def get_db_connection(request: Request):
+async def cursor(request: Request):
     async with request.app.state.db_pool.connection() as conn:
-        yield conn
+        async with conn.cursor() as result:
+            yield result
