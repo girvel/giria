@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from . import security
 from .dependencies.db import cursor
-from .dependencies.auth import login
+from .dependencies.auth import login, LoginData
 
 router = APIRouter()
 
@@ -50,7 +50,7 @@ class LoginPair(BaseModel):
 @router.post("/login")
 async def login_(response: Response, login_pair: LoginPair, db: AsyncCursor = Depends(cursor)):
     await db.execute("""
-        SELECT password FROM players
+        SELECT password, player_id FROM players
         WHERE login = %s
     """, (login_pair.login, ))
 
@@ -63,12 +63,30 @@ async def login_(response: Response, login_pair: LoginPair, db: AsyncCursor = De
 
     response.set_cookie(
         key="jwt",
-        value=security.create_access_token({"login": login_pair.login}),
+        value=security.create_access_token({"login": login_pair.login, "id": entry[1]}),
         httponly=True,
-        # secure=True,  # TODO! https
+        # secure=True,  # TODO https
         samesite="lax",
         max_age=security.TOKEN_LIFETIME_SEC
     )
+
+class PlayerInfo(BaseModel):
+    login: str
+    settled: bool
+
+@router.get("/player_info")
+async def player_info(db: AsyncCursor = Depends(cursor), user: LoginData = Depends(login)) -> PlayerInfo:
+    await db.execute("""
+        SELECT EXISTS(
+            SELECT city_id FROM cities
+            WHERE player_id = %s
+        );
+    """, (user.id, ))
+
+    settled, = await db.fetchone()
+
+    return PlayerInfo(login=user.login, settled=settled)
+
 
 class SettleBody(BaseModel):
     x: int
@@ -76,7 +94,7 @@ class SettleBody(BaseModel):
     city_name: str
 
 @router.post("/settle")
-async def settle(body: SettleBody, db: AsyncCursor = Depends(cursor), user: str = Depends(login)):
+async def settle(body: SettleBody, db: AsyncCursor = Depends(cursor), user: LoginData = Depends(login)):
     await db.execute("""
         SELECT city_id FROM world_map
         WHERE x = %s AND y = %s;
@@ -104,11 +122,9 @@ async def settle(body: SettleBody, db: AsyncCursor = Depends(cursor), user: str 
 
     await db.execute("""
         INSERT INTO cities (name, population, player_id)
-        SELECT %s AS name, 100 AS population, player_id
-        FROM players
-        WHERE login = %s
-        RETURNING city_id
-    """, (body.city_name, user, ))
+        VALUES (%s, 100, %s)
+        RETURNING city_id;
+    """, (body.city_name, user.id))
 
     city_id, = await db.fetchone()  # TODO! try joining queries
 

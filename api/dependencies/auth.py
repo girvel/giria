@@ -1,11 +1,16 @@
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 
 from .. import security
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-async def login(request: Request) -> str:
+class LoginData(BaseModel):
+    login: str
+    id: int
+
+async def login(request: Request) -> LoginData:
     token = request.cookies.get("jwt")
     if not token:
         raise HTTPException(
@@ -16,7 +21,7 @@ async def login(request: Request) -> str:
     payload, err = security.verify_access_token(token)
     match err:
         case None:
-            return payload["login"]
+            return LoginData(**payload)
         case security.TokenIssue.expired:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
