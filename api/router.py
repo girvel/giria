@@ -109,10 +109,9 @@ async def settle(body: SettleBody, db: AsyncCursor = Depends(cursor), user: Logi
     await db.execute("""
         SELECT EXISTS(
             SELECT * FROM cities
-            LEFT JOIN players ON cities.player_id = players.player_id
-            WHERE login = %s
+            WHERE player_id = %s
         );
-    """, (user, ))
+    """, (user.id, ))
 
     if (await db.fetchone())[0]:
         raise HTTPException(
