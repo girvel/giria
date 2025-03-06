@@ -1,6 +1,8 @@
 import logging
 import pathlib
+import sys
 import time
+import signal
 
 import psycopg
 
@@ -74,6 +76,8 @@ def initialize(connection: psycopg.Connection):
         WHERE x = 1 AND y = 1;
     """)
 
+    connection.commit()
+
     logging.info("Initialized DB")
 
 
@@ -96,6 +100,13 @@ if __name__ == '__main__':
         initialize(conn)
 
         logging.info("Starting game loop")
+
+        def terminate(signum, frame):
+            logging.info(f"Received signal {signum}, shutting down gracefully...")
+            sys.exit(0)
+
+        signal.signal(signal.SIGTERM, terminate)
+        signal.signal(signal.SIGINT, terminate)
 
         while True:
             t = time.time()

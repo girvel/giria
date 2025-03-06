@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Request, FastAPI
+from psycopg import AsyncCursor
 from psycopg_pool import AsyncConnectionPool
 
 
@@ -24,3 +25,4 @@ async def cursor(request: Request):
     async with request.app.state.db_pool.connection() as conn:
         async with conn.cursor() as result:
             yield result
+        conn.commit()
