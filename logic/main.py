@@ -82,7 +82,20 @@ def initialize(connection: psycopg.Connection):
 
 
 def update(connection: psycopg.Connection):
-    pass
+    connection.execute("""
+        UPDATE cities
+        SET population = CEIL(float_value) + CASE
+            WHEN random() < MOD(float_value, 1) THEN 1
+            ELSE 0
+        END
+        FROM (
+            SELECT LEAST(1000, population * 1.00064) AS float_value, city_id
+            FROM cities
+        ) AS new_population
+        WHERE new_population.city_id = cities.city_id;
+    """)
+
+    connection.commit()
 
 
 if __name__ == '__main__':

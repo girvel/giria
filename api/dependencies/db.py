@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Request, FastAPI
-from psycopg import AsyncCursor
 from psycopg_pool import AsyncConnectionPool
 
 
