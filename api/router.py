@@ -75,6 +75,7 @@ class PlayerInfo(BaseModel):
     login: str
     settled: bool
 
+# TODO join with login?
 @router.get("/player_info")
 async def player_info(db: AsyncCursor = Depends(cursor), user: LoginData = Depends(login)) -> PlayerInfo:
     await db.execute("""
@@ -133,3 +134,19 @@ async def settle(body: SettleBody, db: AsyncCursor = Depends(cursor), user: Logi
         SET city_id = %s
         WHERE x = %s AND y = %s
     """, (city_id, body.x, body.y))
+
+
+class Resources(BaseModel):
+    gold: int
+    wood: int
+
+@router.get("/resources")
+async def resources(db: AsyncCursor = Depends(cursor), user: LoginData = Depends(login)):
+    await db.execute("""
+        SELECT gold, wood
+        FROM players
+        WHERE player_id = %s
+    """, (user.id, ))
+
+    gold, wood = await db.fetchone()
+    return Resources(gold=gold, wood=wood)

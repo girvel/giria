@@ -29,13 +29,15 @@ def initialize(connection: psycopg.Connection):
             player_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
             login VARCHAR(20) NOT NULL,
             password BYTEA NOT NULL,
-            color CHAR(6) NOT NULL
+            color CHAR(6) NOT NULL,
+            gold INTEGER NOT NULL,
+            wood INTEGER NOT NULL
         );
         
-        INSERT INTO players (login, color, password)
+        INSERT INTO players (login, color, password, gold, wood)
         VALUES
-        ('remnants', 'dddddd', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi'),
-        ('girvel', 'dd134b', '$2b$12$D38R.HynTNpRGcsq1lhae.MyOSgVM7tUyfhfLBzbgXrWUQ5k.iRxi');
+        ('remnants', 'dddddd', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi', 0, 0),
+        ('girvel', 'dd134b', '$2b$12$D38R.HynTNpRGcsq1lhae.MyOSgVM7tUyfhfLBzbgXrWUQ5k.iRxi', 10, 10);
         
         CREATE TABLE cities (
             city_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -94,10 +96,6 @@ def update(connection: psycopg.Connection):
         ) AS new_population
         WHERE new_population.city_id = cities.city_id;
     """)
-
-    population, = connection.execute("SELECT population FROM cities WHERE city_id = 1").fetchone()
-
-    logging.debug(f"{population = }")
 
     connection.commit()
 
