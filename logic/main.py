@@ -6,7 +6,7 @@ import signal
 
 import psycopg
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def initialize(connection: psycopg.Connection):
@@ -45,7 +45,7 @@ def initialize(connection: psycopg.Connection):
         );
         
         INSERT INTO cities (name, population, player_id)
-        VALUES ('Aldberg', 500, 1);
+        VALUES ('Aldberg', 100, 1);
         
         CREATE TABLE world_map (
             x INTEGER NOT NULL,
@@ -84,7 +84,7 @@ def initialize(connection: psycopg.Connection):
 def update(connection: psycopg.Connection):
     connection.execute("""
         UPDATE cities
-        SET population = CEIL(float_value) + CASE
+        SET population = FLOOR(float_value) + CASE
             WHEN random() < MOD(float_value, 1) THEN 1
             ELSE 0
         END
@@ -94,6 +94,10 @@ def update(connection: psycopg.Connection):
         ) AS new_population
         WHERE new_population.city_id = cities.city_id;
     """)
+
+    population, = connection.execute("SELECT population FROM cities WHERE city_id = 1").fetchone()
+
+    logging.debug(f"{population = }")
 
     connection.commit()
 
