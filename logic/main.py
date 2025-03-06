@@ -80,6 +80,12 @@ def initialize(connection: psycopg.Connection):
         ) RETURNS double precision
             LANGUAGE sql IMMUTABLE AS
         'SELECT dividend - floor(dividend / divisor) * divisor';
+        
+        CREATE FUNCTION random_round (
+            value double precision
+        ) RETURNS INTEGER
+            LANGUAGE sql IMMUTABLE AS
+        'SELECT FLOOR(value) + CASE WHEN RANDOM() < fmod(value, 1) THEN 1 ELSE 0 END';
     """)
 
     TILE_TYPES = {
@@ -120,12 +126,10 @@ def initialize(connection: psycopg.Connection):
 
 
 def update(connection: psycopg.Connection):
+    # TODO! remove subquery from the first query
     connection.execute("""
         UPDATE cities
-        SET population = FLOOR(float_value) + CASE
-            WHEN random() < fmod(float_value, 1.) THEN 1
-            ELSE 0
-        END
+        SET population = random_round(float_value)
         FROM (
             SELECT
                 LEAST(1000, population * (1 + 0.00064 * growth_rate)) AS float_value,
@@ -135,6 +139,21 @@ def update(connection: psycopg.Connection):
             LEFT JOIN tiles ON world_map.tile = tiles.tile
         ) AS new_population
         WHERE new_population.city_id = cities.city_id;
+        
+        UPDATE players
+        SET
+            gold = random_round(gold + gold_rate_total),
+            wood = random_round(wood + wood_rate_total)
+        FROM (
+            SELECT SUM(gold_rate) AS gold_rate_total,
+                   SUM(wood_rate) AS wood_rate_total,
+                   player_id
+            FROM cities
+            JOIN world_map ON cities.city_id = world_map.city_id
+            JOIN tiles ON world_map.tile = tiles.tile
+            GROUP BY player_id
+        ) AS subquery
+        WHERE players.player_id = subquery.player_id;
     """)
 
     connection.commit()
