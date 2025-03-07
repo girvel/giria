@@ -22,7 +22,7 @@ CREATE TABLE players (
 
 INSERT INTO players (login, color, password, gold, wood)
 VALUES
-('remnants', 'dddddd', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi', 0, 0),
+('remnants', '4f7da3', '$2b$12$VCMoArsi18YhtdDoJIfE5.J4PeUpJfLOxvJSnw5vB.0MLCDfSXQyi', 0, 0),
 ('girvel', 'dd134b', '$2b$12$D38R.HynTNpRGcsq1lhae.MyOSgVM7tUyfhfLBzbgXrWUQ5k.iRxi', 10, 10);
 
 CREATE TABLE cities (
