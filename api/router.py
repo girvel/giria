@@ -25,12 +25,13 @@ class WorldTile(BaseModel):
     x: int
     y: int
     tile: Literal["dead", "plain", "forest", "mountain"]
+    configuration: int
     city: City | None
 
 @router.get("/world_map")
 async def world_map(db: AsyncCursor = Depends(cursor)) -> list[WorldTile]:
     await db.execute("""
-        SELECT x, y, tile, name, login, color, population
+        SELECT x, y, tile, configuration, name, login, color, population
         FROM world_map
         LEFT JOIN cities ON world_map.city_id = cities.city_id
         LEFT JOIN players ON cities.player_id = players.player_id
@@ -38,10 +39,12 @@ async def world_map(db: AsyncCursor = Depends(cursor)) -> list[WorldTile]:
 
     return [
         WorldTile(
-            x=x, y=y, tile=tile,
-            city=city_name and City(city_name=city_name, player_login=login, player_color=color, population=population)
+            x=x, y=y, tile=tile, configuration=configuration,
+            city=city_name and City(
+                city_name=city_name, player_login=player_login, player_color=color, population=population
+            )
         )
-        for x, y, tile, city_name, login, color, population in await db.fetchall()
+        for x, y, tile, configuration, city_name, player_login, color, population in await db.fetchall()
     ]
 
 class LoginPair(BaseModel):

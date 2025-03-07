@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import random
 import sys
 import time
 import signal
@@ -70,8 +71,11 @@ def initialize(connection: psycopg.Connection):
             x INTEGER NOT NULL,
             y INTEGER NOT NULL,
             tile VARCHAR(8) NOT NULL REFERENCES tiles,
+            configuration INTEGER NOT NULL,
             city_id INTEGER REFERENCES cities,
-            PRIMARY KEY(x, y)
+            
+            PRIMARY KEY(x, y),
+            CONSTRAINT configurations_n CHECK (configuration BETWEEN 0 AND 4)
         );
         
         CREATE FUNCTION fmod (
@@ -98,8 +102,8 @@ def initialize(connection: psycopg.Connection):
     for y, line in enumerate(pathlib.Path("map.txt").read_text().splitlines()):
         for x, character in enumerate(line):
             connection.execute(
-                "INSERT INTO world_map (x, y, tile) VALUES (%s, %s, %s)",
-                (x, y, TILE_TYPES[character])
+                "INSERT INTO world_map (x, y, tile, configuration) VALUES (%s, %s, %s, %s)",
+                (x, y, TILE_TYPES[character], random.randint(0, 4))
             )
 
     connection.execute("""
