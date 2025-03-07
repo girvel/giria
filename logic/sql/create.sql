@@ -38,26 +38,23 @@ INSERT INTO cities (name, population, player_id) VALUES
 ('Eastwatch', 50, 1),
 ('Ledfolk', 100, 1);
 
+CREATE TABLE armies (
+    army_id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    player_id INTEGER NOT NULL REFERENCES players,
+    army_size INTEGER NOT NULL
+);
+
+INSERT INTO armies (player_id, army_size) VALUES
+(1, 20);
+
 CREATE TABLE world_map (
     x INTEGER NOT NULL,
     y INTEGER NOT NULL,
     tile VARCHAR(8) NOT NULL REFERENCES tiles,
     configuration INTEGER NOT NULL,
     city_id INTEGER REFERENCES cities,
+    army_id INTEGER REFERENCES armies,
 
     PRIMARY KEY(x, y),
     CONSTRAINT configurations_n CHECK (configuration BETWEEN 0 AND 4)
 );
-
-CREATE FUNCTION fmod (
-   dividend double precision,
-   divisor double precision
-) RETURNS double precision
-    LANGUAGE sql IMMUTABLE AS
-'SELECT dividend - floor(dividend / divisor) * divisor';
-
-CREATE FUNCTION random_round (
-    value double precision
-) RETURNS INTEGER
-    LANGUAGE sql IMMUTABLE AS
-'SELECT FLOOR(value) + CASE WHEN RANDOM() < fmod(value, 1) THEN 1 ELSE 0 END';

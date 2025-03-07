@@ -25,6 +25,7 @@ def initialize(connection: psycopg.Connection):
 
     logging.info("Initializing DB")
 
+    connection.execute(pathlib.Path("sql/functions.sql").read_text())
     connection.execute(pathlib.Path("sql/create.sql").read_text())
 
     TILE_TYPES = {
@@ -57,6 +58,10 @@ def initialize(connection: psycopg.Connection):
         UPDATE world_map
         SET city_id = 4
         WHERE x = 11 AND y = 5;
+        
+        UPDATE world_map
+        SET army_id = 1
+        WHERE x = 3 AND y = 7;
     """)
 
     connection.commit()

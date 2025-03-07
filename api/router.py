@@ -21,20 +21,31 @@ class City(BaseModel):
     player_color: str
     population: int
 
+class Army(BaseModel):
+    owner: str
+    size: int
+    color: str
+
 class WorldTile(BaseModel):
     x: int
     y: int
     tile: Literal["dead", "plain", "forest", "mountain"]
     configuration: int
     city: City | None
+    army: Army | None
 
 @router.get("/world_map")
 async def world_map(db: AsyncCursor = Depends(cursor)) -> list[WorldTile]:
     await db.execute("""
-        SELECT x, y, tile, configuration, name, login, color, population
+        SELECT
+            x, y, tile, configuration,
+            name, owner.login, owner.color, population,
+            army_owner.login, army_owner.color, army_size
         FROM world_map
         LEFT JOIN cities ON world_map.city_id = cities.city_id
-        LEFT JOIN players ON cities.player_id = players.player_id
+        LEFT JOIN players owner ON cities.player_id = owner.player_id
+        LEFT JOIN armies ON world_map.army_id = armies.army_id
+        LEFT JOIN players army_owner ON armies.player_id = army_owner.player_id
     """)
 
     return [
@@ -42,9 +53,13 @@ async def world_map(db: AsyncCursor = Depends(cursor)) -> list[WorldTile]:
             x=x, y=y, tile=tile, configuration=configuration,
             city=city_name and City(
                 city_name=city_name, player_login=player_login, player_color=color, population=population
-            )
+            ),
+            army=army_owner and Army(owner=army_owner, color=army_color, size=army_size)
         )
-        for x, y, tile, configuration, city_name, player_login, color, population in await db.fetchall()
+        for x, y, tile, configuration,
+            city_name, player_login, color, population,
+            army_owner, army_color, army_size
+        in await db.fetchall()
     ]
 
 class LoginPair(BaseModel):
