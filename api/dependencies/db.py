@@ -24,4 +24,4 @@ async def cursor(request: Request):
     async with request.app.state.db_pool.connection() as conn:
         async with conn.cursor() as result:
             yield result
-        conn.commit()
+        await conn.commit()
