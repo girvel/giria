@@ -1,27 +1,26 @@
 from contextlib import asynccontextmanager
+from typing import TypeAlias, Annotated
 
-from fastapi import Request, FastAPI
-from psycopg_pool import AsyncConnectionPool
+import asyncpg
+from fastapi import Request, FastAPI, Depends
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    db_pool = AsyncConnectionPool(
-        conninfo="postgresql://postgres:postgres@db:5432/giria",
+async def lifespan(_app: FastAPI):
+    async with asyncpg.create_pool(
+        host="db",
+        database="giria",
+        user="postgres",
+        password="postgres",
         min_size=1,
         max_size=10,
-        open=False,
-    )
+    ) as pool:
+        yield {"db_pool": pool}
 
-    await db_pool.open()
-    app.state.db_pool = db_pool
-    try:
-        yield
-    finally:
-        await db_pool.close()
 
-async def cursor(request: Request):
-    async with request.app.state.db_pool.connection() as conn:
-        async with conn.cursor() as result:
-            yield result
-        await conn.commit()
+async def get_pg_transaction(request: Request) -> asyncpg.Connection:
+    async with request.state.db_pool.acquire() as conn:
+        async with conn.transaction():
+            yield conn
+
+PgConnection: TypeAlias = Annotated[asyncpg.Connection, Depends(get_pg_transaction)]
